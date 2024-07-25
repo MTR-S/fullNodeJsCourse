@@ -1,0 +1,11 @@
+h1 {
+    background-color: black;
+    color: #fff;
+    border: 10px solid #fff; 
+    border-radius: 16px;
+    width: 400px;
+}
+
+span {
+    color: yellow;
+}

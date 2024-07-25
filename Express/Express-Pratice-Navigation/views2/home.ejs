@@ -1,0 +1,27 @@
+<%- include('./layouts/head.ejs') %>
+
+<main>
+    <h1>ADD USER:</h1>
+    <form 
+        action="/"
+        method="POST"
+    >
+    <label>
+        USER NAME:
+        <input 
+            type="text"
+            name="userName"
+            id="userName"
+        >
+        <button
+            type="submit"
+        >
+            ADD NEW USER
+        </button>
+        </input>
+
+    </label>
+    </form>
+</main>
+
+<%- include('./layouts/tail.ejs') %>

@@ -1,0 +1,26 @@
+<%- include ('./layouts/head') %>
+
+<% if(users.length > 0) { %>
+    <div>
+        <h1>User(s) List:</h1>
+        <ul>
+            <% for(let [index, user] of users.entries()) { %>
+                <li>User <%= index + 1%>: <%= user.userName %></li>                
+            <% } %>
+        </ul>
+    </div>
+<% } else { %>
+        <h1>No Users Registered</h1>
+    <% } %>
+
+    <form action="/">
+        <button
+            type="submit"
+        >
+            ADD USER
+        </button>
+    </form>
+
+
+
+<%- include ('./layouts/tail') %>
