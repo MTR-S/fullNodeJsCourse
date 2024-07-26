@@ -1,5 +1,8 @@
 const Product = require("../model/product");
 
+const { ObjectId } = require("mongodb");
+const getDb = require("../util/database").getDb;
+
 exports.getAddProduct = (req, resp, next) => {
   resp.render("admin/edit-product", {
     pageTitle: "Add Products",
@@ -23,79 +26,72 @@ exports.postAddProducts = async (req, resp, next) => {
   }
 };
 
-// exports.getEditProduct = (req, resp, next) => {
-//   const editMode = req.query.edit === "true";
+exports.getEditProduct = async (req, resp, next) => {
+  const editMode = req.query.edit === "true";
 
-//   if (!editMode) {
-//   }
+  if (!editMode) {
+    return resp.redirect("/");
+  }
 
-//   const productId = req.params.productId;
+  try {
+    const productId = req.params.productId;
+    const product = await Product.findById(productId);
 
-//   req.user
-//     .getProducts({ where: { id: productId } })
-//     .then((products) => {
-//       const product = products[0];
+    if (!product) {
+      return resp.redirect("/");
+    }
+    resp.render("admin/edit-product", {
+      pageTitle: "Edit Products",
+      path: "/admin/edit-product",
+      editing: editMode,
+      product: product,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
 
-//       if (!product) {
-//         return resp.redirect("/");
-//       }
-//       resp.render("admin/edit-product", {
-//         pageTitle: "Edit Products",
-//         path: "/admin/edit-product",
-//         editing: editMode,
-//         product: product,
-//       });
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// };
+exports.postEditProducts = async (req, res, next) => {
+  const prodId = req.body.productId;
 
-// exports.postEditProducts = (req, res, next) => {
-//   const prodId = req.body.productId;
+  const updatedTitle = req.body.title;
+  const updatedPrice = req.body.price;
+  const updatedImageUrl = req.body.imageUrl;
+  const updatedDesc = req.body.description;
 
-//   const updatedTitle = req.body.title;
-//   const updatedPrice = req.body.price;
-//   const updatedImageUrl = req.body.imageUrl;
-//   const updatedDesc = req.body.description;
-//   const updatedProduct = new Product(
-//     prodId,
-//     updatedTitle,
-//     updatedImageUrl,
-//     updatedDesc,
-//     updatedPrice
-//   );
+  try {
+    const db = getDb();
+    await db.collection("products").updateOne(
+      { _id: new ObjectId(prodId) },
+      {
+        $set: {
+          title: updatedTitle,
+          price: updatedPrice,
+          imageUrl: updatedImageUrl,
+          description: updatedDesc,
+        },
+      }
+    );
+    res.redirect("/");
+  } catch (err) {
+    console.error("Error updating product:", err);
+    res.status(500).send("Failed to update product");
+  }
+};
 
-//   Product.findByPk(prodId)
-//     .then((product) => {
-//       product.title = updatedTitle;
-//       product.price = updatedPrice;
-//       product.imageUrl = updatedImageUrl;
-//       product.description = updatedDesc;
-//       return product.save();
-//     })
-//     .then(() => {
-//       res.redirect("/admin/products");
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// };
+exports.getProducts = async (req, resp, next) => {
+  try {
+    const products = await Product.fetchAll();
 
-// exports.getProducts = (req, resp, next) => {
-//   req.user
-//     .getProducts()
-//     .then((products) => {
-//       resp.render("admin/products", {
-//         prods: products,
-//         pageTitle: "Admin Products",
-//         path: "/admin/products",
-//       });
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// };
+    resp.render("admin/products", {
+      prods: products,
+      pageTitle: "Admin Products",
+      path: "/admin/products",
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 // exports.postDeleteProducts = (req, res, next) => {
 //   const prodId = req.body.productId;

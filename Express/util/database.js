@@ -19,8 +19,8 @@ async function run(callbackFunction) {
     console.log("You're connected to mongodb!");
 
     callbackFunction();
-  } catch {
-    console.dir();
+  } catch (err) {
+    console.log("Cannot connect to mongodb: " + err);
   }
 }
 /*

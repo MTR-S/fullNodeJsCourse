@@ -9,7 +9,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 const app = express();
-
 /*
 use() is bassically the place where
 you can set the logical of the function that will
@@ -68,7 +67,6 @@ This allows you to serve this files direct to the client.
 */
 
 app.use(express.static(path.join(__dirname, "public")));
-
 /*
 There is another way to filter your path
 by passing the first part of the url to the main
