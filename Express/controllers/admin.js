@@ -11,19 +11,27 @@ exports.getAddProduct = (req, resp, next) => {
   });
 };
 
-exports.postAddProducts = async (req, resp, next) => {
+exports.postAddProducts = (req, resp, next) => {
   const title = req.body.title;
   const price = req.body.price;
   const description = req.body.description;
   const imageUrl = req.body.imageUrl;
 
-  const newProduct = new Product(title, price, description, imageUrl);
-  try {
-    await newProduct.save();
-    resp.redirect("/admin/products");
-  } catch (err) {
-    throw "Can't add this Product";
-  }
+  const product = new Product({
+    title,
+    price,
+    description,
+    imageUrl,
+  });
+
+  product
+    .save()
+    .then(() => {
+      resp.redirect("/admin/products");
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 };
 
 exports.getEditProduct = async (req, resp, next) => {
@@ -60,18 +68,13 @@ exports.postEditProducts = async (req, res, next) => {
   const updatedDesc = req.body.description;
 
   try {
-    const db = getDb();
-    await db.collection("products").updateOne(
-      { _id: new ObjectId(prodId) },
-      {
-        $set: {
-          title: updatedTitle,
-          price: updatedPrice,
-          imageUrl: updatedImageUrl,
-          description: updatedDesc,
-        },
-      }
-    );
+    const product = await Product.findByIdAndUpdate(prodId, {
+      title: updatedTitle,
+      price: updatedPrice,
+      imageUrl: updatedImageUrl,
+      description: updatedDesc,
+    });
+
     res.redirect("/");
   } catch (err) {
     console.error("Error updating product:", err);
@@ -81,7 +84,7 @@ exports.postEditProducts = async (req, res, next) => {
 
 exports.getProducts = async (req, resp, next) => {
   try {
-    const products = await Product.fetchAll();
+    const products = await Product.find({});
 
     resp.render("admin/products", {
       prods: products,
@@ -93,18 +96,18 @@ exports.getProducts = async (req, resp, next) => {
   }
 };
 
-// exports.postDeleteProducts = (req, res, next) => {
-//   const prodId = req.body.productId;
+exports.postDeleteProducts = async (req, res, next) => {
+  const prodId = req.body.productId;
 
-//   Product.destroy({
-//     where: {
-//       id: prodId,
-//     },
-//   })
-//     .then(() => {
-//       res.redirect("/admin/products");
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// };
+  try {
+    const prodState = await Product.findByIdAndDelete(prodId);
+
+    prodState
+      ? console.log("Sucess! Product Deleted.")
+      : console.log("Cant Deleted this Product");
+
+    res.redirect("/admin/products");
+  } catch (err) {
+    console.log(err);
+  }
+};

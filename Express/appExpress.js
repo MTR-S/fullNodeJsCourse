@@ -3,7 +3,8 @@ const path = require("path");
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 // const pageNotFoundController = require("./controllers/404");
-const db = require("./util/database").run;
+const mongoose = require("mongoose");
+// const User = require("./model/user");
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -76,15 +77,34 @@ will be apllied to all the routes inside adminRoutes
 thereofere "/admin" will be checked only one time.
 */
 
+// app.use(async (req, res, next) => {
+//   req.user = await User.findUserById("66a8e5e202b1f08b997cd7ec");
+//   req.user = new User(
+//     req.user.name,
+//     req.user.email,
+//     req.user.password,
+//     req.user.cart,
+//     req.user._id
+//   );
+
+//   next();
+// });
+
 app.use("/admin", adminRoutes);
 
 app.use(shopRoutes);
 
 // app.use(pageNotFoundController.get404);
 
-db(() => {
-  app.listen(3000);
-});
+mongoose
+  .connect(
+    "mongodb+srv://Matheus:ytE9IIotXgZsTjmL@nodejscoursecluster.isodwwr.mongodb.net/shop?retryWrites=true&w=majority&appName=NodeJsCourseCluster"
+  )
+  .then(() => {
+    app.listen(3000);
+    console.log("You are connected to Mongodb by Mongoose!");
+  })
+  .catch((err) => console.log(err));
 
 /*
 First we install express.js with the follow comand

@@ -1,5 +1,3 @@
-const path = require("path");
-
 const express = require("express");
 
 const adminController = require("../controllers/admin");
@@ -26,7 +24,7 @@ router.get("/edit-product/:productId", adminController.getEditProduct);
 
 router.post("/edit-product", adminController.postEditProducts);
 
-// router.post("/delete-product", adminController.postDeleteProducts);
+router.post("/delete-product", adminController.postDeleteProducts);
 
 router.get("/products", adminController.getProducts);
 

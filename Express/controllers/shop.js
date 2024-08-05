@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb");
 const Product = require("../model/product");
 
 exports.getProducts = async (req, resp, next) => {
@@ -17,7 +18,7 @@ exports.getProducts = async (req, resp, next) => {
         string to the client. 
     */
   try {
-    const products = await Product.fetchAll();
+    const products = await Product.find({});
 
     resp.render("shop/product-list", {
       prods: products,
@@ -36,7 +37,7 @@ exports.getProducts = async (req, resp, next) => {
 
 exports.getIndex = async (req, resp, next) => {
   try {
-    const products = await Product.fetchAll();
+    const products = await Product.find();
 
     resp.render("shop/index", {
       prods: products,
@@ -48,82 +49,48 @@ exports.getIndex = async (req, resp, next) => {
   }
 };
 
-// exports.getCart = (req, res, next) => {
-//   req.user
-//     .getCart()
-//     .then((cart) => {
-//       return cart.getProducts();
-//     })
-//     .then((products) => {
-//       res.render("shop/cart", {
-//         path: "/cart",
-//         pageTitle: "Your Cart",
-//         products: products,
-//       });
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// };
+exports.getCart = async (req, res, next) => {
+  try {
+    const products = await req.user.getProductFetchingCart();
 
-// exports.postCart = (req, res, next) => {
-//   /*
-//         When we use the POST HTTP method we gain
-//         acess to the req.body value. Whent we use the GET
-//         HTTP method we have acess to the req.params value!
-//     */
+    res.render("shop/cart", {
+      path: "/cart",
+      pageTitle: "Your Cart",
+      products: products,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
 
-//   const prodId = req.body.productId;
-//   let fetchedCart;
-//   let newQuantity = 1;
-//   req.user
-//     .getCart()
-//     .then((cart) => {
-//       fetchedCart = cart;
-//       return cart.getProducts({ where: { id: prodId } });
-//     })
-//     .then((products) => {
-//       let product;
-//       if (products.length > 0) {
-//         product = products[0];
-//       }
-//       if (product) {
-//         const oldQuantity = product.cartItem.quantity;
-//         newQuantity = oldQuantity + 1;
-//         return product;
-//       }
-//       return Product.findByPk(prodId);
-//     })
-//     .then((product) => {
-//       return fetchedCart.addProduct(product, {
-//         through: { quantity: newQuantity },
-//       });
-//     })
-//     .then(() => {
-//       res.redirect("/cart");
-//     })
-//     .catch((err) => console.log(err));
-// };
+exports.postCart = async (req, res, next) => {
+  /*
+        When we use the POST HTTP method we gain
+        acess to the req.body value. Whent we use the GET
+        HTTP method we have acess to the req.params value!
+    */
+  const prodId = req.body.productId;
+  try {
+    const product = await Product.findById(prodId);
 
-// exports.postCartDeleteProduct = (req, res, next) => {
-//   const prodId = req.body.productId;
+    await req.user.addToCart(product);
 
-//   req.user
-//     .getCart()
-//     .then((cart) => {
-//       return cart.getProducts({ where: { id: prodId } });
-//     })
-//     .then((products) => {
-//       const product = products[0];
-//       return product.cartItem.destroy();
-//     })
-//     .then(() => {
-//       res.redirect("/cart");
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// };
+    res.redirect("/cart");
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+exports.postCartDeleteProduct = async (req, res, next) => {
+  const prodId = req.body.productId;
+  try {
+    await req.user.deleteFromCart(prodId);
+
+    res.redirect("/cart");
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 // exports.getCheckout = (req, res, next) => {
 //   res.render("shop/cart", {
@@ -132,53 +99,25 @@ exports.getIndex = async (req, resp, next) => {
 //   });
 // };
 
-// exports.postOrder = (req, res, next) => {
-//   let fetchedCart;
+exports.postOrder = async (req, res, next) => {
+  try {
+    await req.user.addOrderByUser();
 
-//   req.user
-//     .getCart()
-//     .then((cart) => {
-//       fetchedCart = cart;
-//       return cart.getProducts();
-//     })
-//     .then((products) => {
-//       return req.user
-//         .createOrder()
-//         .then((order) => {
-//           order.addProducts(
-//             products.map((product) => {
-//               product.orderItem = {
-//                 quantity: product.cartItem.quantity,
-//               };
-//               return product;
-//             })
-//           );
-//         })
-//         .catch((err) => console.log(err));
-//     })
-//     .then((result) => {
-//       return fetchedCart.setProducts(null);
-//     })
-//     .then(() => {
-//       res.redirect("/orders");
-//     })
-//     .catch((err) => console.log(err));
-// };
+    res.redirect("/orders");
+  } catch (err) {
+    console.log(err);
+  }
+};
 
-// exports.getOrders = (req, res, next) => {
-//   req.user
-//     .getOrders({ include: ["products"] })
-//     .then((orders) => {
-//       res.render("shop/orders", {
-//         path: "/orders",
-//         pageTitle: "Orders",
-//         orders: orders,
-//       });
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// };
+exports.getOrders = async (req, res, next) => {
+  const order = await req.user.getOrderByUser();
+  console.log(order);
+  res.render("shop/orders", {
+    path: "/orders",
+    pageTitle: "Orders",
+    orders: order,
+  });
+};
 
 exports.getProduct = async (req, res, next) => {
   const searchProductId = req.params.productId;
@@ -195,6 +134,7 @@ exports.getProduct = async (req, res, next) => {
   }
 
   /*
+  SEQUELIZE: 
   I can use the findAll() method too to make this query:
           Product.findAll({ where: {
               id:searchProductId
