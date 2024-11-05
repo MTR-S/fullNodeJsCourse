@@ -1,13 +1,16 @@
 const Product = require("../model/product");
-
 const { ObjectId } = require("mongodb");
 const getDb = require("../util/database").getDb;
 
 exports.getAddProduct = (req, resp, next) => {
+  if (!req.session.isLoggedIn) {
+    return resp.redirect("/login");
+  }
   resp.render("admin/edit-product", {
     pageTitle: "Add Products",
     path: "/admin/add-product",
     editing: false,
+    isAuthenticated: req.session.isLoggedIn,
   });
 };
 
@@ -16,12 +19,14 @@ exports.postAddProducts = (req, resp, next) => {
   const price = req.body.price;
   const description = req.body.description;
   const imageUrl = req.body.imageUrl;
+  const userId = req.session.user._id;
 
   const product = new Product({
     title,
     price,
     description,
     imageUrl,
+    userId,
   });
 
   product
@@ -53,6 +58,7 @@ exports.getEditProduct = async (req, resp, next) => {
       path: "/admin/edit-product",
       editing: editMode,
       product: product,
+      isAuthenticated: req.session.isLoggedIn,
     });
   } catch (err) {
     console.log(err);
@@ -90,6 +96,7 @@ exports.getProducts = async (req, resp, next) => {
       prods: products,
       pageTitle: "Admin Products",
       path: "/admin/products",
+      isAuthenticated: req.session.isLoggedIn,
     });
   } catch (err) {
     console.log(err);
@@ -103,8 +110,8 @@ exports.postDeleteProducts = async (req, res, next) => {
     const prodState = await Product.findByIdAndDelete(prodId);
 
     prodState
-      ? console.log("Sucess! Product Deleted.")
-      : console.log("Cant Deleted this Product");
+      ? console.log("Success! Product Deleted.")
+      : console.log("Can't Delete this Product");
 
     res.redirect("/admin/products");
   } catch (err) {

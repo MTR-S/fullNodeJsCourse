@@ -2,14 +2,22 @@ const path = require("path");
 
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
+const authRoutes = require("./routes/auth");
 // const pageNotFoundController = require("./controllers/404");
 const mongoose = require("mongoose");
+const session = require("express-session");
+const MongoDBStore = require("connect-mongodb-session")(session);
 // const User = require("./model/user");
+const flash = require("connect-flash");
 
 const express = require("express");
 const bodyParser = require("body-parser");
+const User = require("./model/user");
+
+const cookieParser = require("cookie-parser");
 
 const app = express();
+
 /*
 use() is bassically the place where
 you can set the logical of the function that will
@@ -45,6 +53,14 @@ we have to first set to node.js what engine we will
 use and then we set the file or an array of files
 that are this template views
 */
+const MONGODB_URI =
+  "mongodb+srv://Matheus:ytE9IIotXgZsTjmL@nodejscoursecluster.isodwwr.mongodb.net/shop"; //retryWrites=true&w=majority&appName=NodeJsCourseCluster"
+
+const store = new MongoDBStore({
+  uri: MONGODB_URI,
+  databaseName: "shop",
+  collection: "session",
+});
 
 app.set("view engine", "ejs");
 app.set("views", "Express/views");
@@ -77,29 +93,36 @@ will be apllied to all the routes inside adminRoutes
 thereofere "/admin" will be checked only one time.
 */
 
-// app.use(async (req, res, next) => {
-//   req.user = await User.findUserById("66a8e5e202b1f08b997cd7ec");
-//   req.user = new User(
-//     req.user.name,
-//     req.user.email,
-//     req.user.password,
-//     req.user.cart,
-//     req.user._id
-//   );
+app.use(
+  session({
+    secret: "my long secret",
+    resave: false, // This means that the session will not be saved on every request, but only if something change in the session
+    saveUninitialized: false, // Don't save a session if was not initialized
+    store: store, // Here is the reference to the information to store a session
+  })
+);
 
-//   next();
-// });
+app.use(flash());
 
+app.use(async (req, res, next) => {
+  try {
+    const user = await User.findById(req.session.user._id);
+
+    req.user = user;
+    next();
+  } catch (err) {
+    next();
+  }
+});
+
+app.use(authRoutes);
 app.use("/admin", adminRoutes);
-
 app.use(shopRoutes);
 
 // app.use(pageNotFoundController.get404);
 
 mongoose
-  .connect(
-    "mongodb+srv://Matheus:ytE9IIotXgZsTjmL@nodejscoursecluster.isodwwr.mongodb.net/shop?retryWrites=true&w=majority&appName=NodeJsCourseCluster"
-  )
+  .connect(MONGODB_URI)
   .then(() => {
     app.listen(3000);
     console.log("You are connected to Mongodb by Mongoose!");
